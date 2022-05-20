@@ -1,9 +1,9 @@
 class BinaryNode:
-    def __init__(self, value) -> None:
+    def __init__(self, item) -> None:
         self.parent : BinaryNode = None
         self.left : BinaryNode = None
         self.right : BinaryNode = None
-        self.value = value
+        self.item = item
     
     def subtree_iter(self):
         if self.left: yield from self.left.subtree_iter()
@@ -50,7 +50,7 @@ class BinaryNode:
         if self.left or self.right:
             if self.left: inter_node = self.predecessor()
             else: inter_node = self.successor()
-            self.value, inter_node.value = inter_node.value, self.value
+            self.item, inter_node.item = inter_node.item, self.item
             return inter_node.subtree_delete()
         if self.parent:
             if self.parent.left is self: self.parent.left = None
@@ -69,7 +69,7 @@ class BinaryTree:
     def __iter__(self):
         if self.root:
             for node in self.root.subtree_iter():
-                yield node.value
+                yield node.item
 
     def build(self, iterable):
         iter_list = [x for x in iterable]
@@ -93,30 +93,99 @@ class BinaryTree:
 
 class BST_Node(BinaryNode):
     def subtree_find(self, key):
-        if self.value > key:
+        if self.item.key > key:
             if self.left: return self.left.subtree_find(key)
-        if self.value < key:
+        elif self.item.key < key:
             if self.right: return self.right.subtree_find(key)
         else: return self
         return None
 
     def subtree_find_next(self, key):
-        if self.value > key:
-            if self.left: return self.left.subtree_find(key)
-        if self.value < key:
-            if self.right: return self.right.subtree_find(key)
-        else: return self
-        return 
+        if self.item.key <= key:
+            if self.right: return self.right.subtree_find_next(key)
+            else: return None
+        elif self.left:
+            inter_node = self.left.subtree_find_next(key)
+            if inter_node: return inter_node
+        return self
 
+    def subtree_find_prev(self, key):
+        if self.item.key >= key:
+            if self.left: return self.left.subtree_find_prev(key)
+            else: return None
+        elif self.right:
+            inter_node = self.right.subtree_find_prev(key)
+            if inter_node: return inter_node
+        return self
+
+    def subtree_insert(self, node):
+        if self.item.key < node.item.key:
+            if self.right: self.right.subtree_insert(node)
+            else: self.subtree_insert_after(self)
+        elif self.item.key > node.item.key:
+            if self.left: self.left.subtree_insert(node)
+            else: self.subtree_insert_before(self)
+        else: self.item = node.item
+
+class SetBinaryTree(BinaryTree):
+    def __init__(self) -> None:
+        super().__init__(Node_Type = BST_Node)
+
+    def iter_order(self): yield from self
+
+    def build(self, iterable):
+        for item in iterable: self.insert(item)
+
+    def find_min(self):
+        return self.root.subtree_first().item
+
+    def find_max(self):
+        return self.root.subtree_last().item
+
+    def find(self, key):
+        if self.root:
+            node = self.root.subtree_find(key)
+            if node: return node.item
+
+    def find_next(self, key):
+        if self.root:
+            node = self.root.subtree_find_next(key)
+            if node: return node.item
+
+    def find_prev(self, key):
+        if self.root:
+            node = self.root.subtree_find_prev(key)
+            if node: return node.item
+
+    def insert(self, item):
+        new_node = self.Node_Type(item)
+        if self.root:
+            self.root.subtree_insert(new_node)
+            if new_node.parent is None: return False
+        else:
+            self.root = new_node
+        self.size += 1
+        return True
+
+    def delete(self, key):
+        assert self.root
+        node = self.root.subtree_find(key)
+        assert node
+        ext = node.subtree_delete()
+        if ext.parent is None: self.root = None
+        self.size -= 1
+        return ext.item 
+
+    
 def main():
     A = range(100)
     btree = BinaryTree()
     btree.build(A)
     print([a for a in btree])
     print(len(btree))
-    print(btree.root.value)
+    print(btree.root.item)
     btree.root.subtree_delete()
-    print(btree.root.value)
+    print(btree.root.item)
     print([a for a in btree])
     print(len(btree))
 
